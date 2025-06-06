@@ -1,0 +1,379 @@
+# Deploying Nigerian Bill Payment Application to DigitalOcean
+
+This guide provides step-by-step instructions for deploying the Nigerian Bill Payment application (including backend, frontend, and admin dashboard) to DigitalOcean.
+
+## Prerequisites
+
+1. A DigitalOcean account
+2. A domain name (for SSL setup)
+3. Basic knowledge of Linux commands
+4. MongoDB Atlas account (or another MongoDB provider)
+
+## Step 1: Create a DigitalOcean Droplet
+
+1. Log in to your DigitalOcean account
+2. Click "Create" and select "Droplets"
+3. Choose the following options:
+   - **Image**: Ubuntu 22.04 LTS
+   - **Plan**: Basic (Shared CPU)
+   - **Size**: Standard ($24/mo with 4GB RAM, 2 CPUs, 80GB SSD) - recommended for production
+   - **Datacenter Region**: Choose the region closest to your users (e.g., Lagos or Johannesburg for Nigerian users)
+   - **Authentication**: SSH keys (recommended) or Password
+   - **Hostname**: bills-payment-app (or your preferred name)
+4. Click "Create Droplet"
+
+## Step 2: Set Up Your Domain
+
+1. Go to your domain registrar and point your domain to DigitalOcean nameservers:
+   - ns1.digitalocean.com
+   - ns2.digitalocean.com
+   - ns3.digitalocean.com
+
+2. In DigitalOcean, go to "Networking" > "Domains"
+3. Add your domain and create the following records:
+   - A record: @ pointing to your Droplet's IP
+   - A record: www pointing to your Droplet's IP
+   - A record: admin pointing to your Droplet's IP (for admin dashboard)
+
+## Step 3: Initial Server Setup
+
+SSH into your Droplet:
+
+```bash
+ssh root@your_droplet_ip
+```
+
+Update the system and install required packages:
+
+```bash
+# Update system
+apt update && apt upgrade -y
+
+# Install Node.js and npm
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+apt install -y nodejs
+
+# Install PM2 (process manager)
+npm install -g pm2
+
+# Install Nginx
+apt install -y nginx
+
+# Install Certbot for SSL
+apt install -y certbot python3-certbot-nginx
+
+# Install Git
+apt install -y git
+```
+
+## Step 4: Set Up SSL Certificate
+
+```bash
+# Obtain SSL certificate
+certbot --nginx -d yourdomain.com -d www.yourdomain.com -d admin.yourdomain.com
+```
+
+Follow the prompts to complete the SSL setup.
+
+## Step 5: Clone the Repository
+
+```bash
+# Create directory for the application
+mkdir -p /var/www/bills-app
+cd /var/www/bills-app
+
+# Clone your repository
+git clone https://github.com/yourusername/bills-payment-app.git .
+```
+
+## Step 6: Set Up Environment Variables
+
+Create a .env file for the backend:
+
+```bash
+cd /var/www/bills-app/backend
+cp .env.example .env
+nano .env
+```
+
+Update the environment variables with your production values:
+
+```
+PORT=5000
+MONGODB_URI=mongodb+srv://your_mongodb_atlas_connection_string
+JWT_SECRET=your_secure_jwt_secret
+PAYSTACK_SECRET_KEY=your_paystack_secret_key
+PAYSTACK_PUBLIC_KEY=your_paystack_public_key
+PAYSTACK_WEBHOOK_SECRET=your_paystack_webhook_secret
+```
+
+## Step 7: Deploy the Backend
+
+```bash
+cd /var/www/bills-app/backend
+
+# Install dependencies
+npm install --production
+
+# Make deploy script executable
+chmod +x deploy.sh
+
+# Run deploy script
+./deploy.sh
+```
+
+Verify that the backend is running:
+
+```bash
+pm2 status
+```
+
+## Step 8: Deploy the Frontend
+
+Update the API base URL in the frontend:
+
+```bash
+cd /var/www/bills-app/frontend
+nano src/services/api.js
+```
+
+Make sure the API base URL is set to `/api` (Nginx will handle the proxy).
+
+Build the frontend:
+
+```bash
+# Make deploy script executable
+chmod +x deploy.sh
+
+# Run deploy script
+./deploy.sh
+```
+
+## Step 9: Deploy the Admin Frontend
+
+Update the API base URL in the admin frontend:
+
+```bash
+cd /var/www/bills-app/admin-frontend
+nano src/services/api.js
+```
+
+Make sure the API base URL is set to `/api` (Nginx will handle the proxy).
+
+Build the admin frontend:
+
+```bash
+# Make deploy script executable
+chmod +x deploy.sh
+
+# Run deploy script
+./deploy.sh
+```
+
+## Step 10: Configure Nginx
+
+Create a new Nginx configuration file:
+
+```bash
+nano /etc/nginx/sites-available/bills-app
+```
+
+Copy the content from the nginx.conf file in your repository.
+
+Enable the site:
+
+```bash
+ln -s /etc/nginx/sites-available/bills-app /etc/nginx/sites-enabled/
+rm /etc/nginx/sites-enabled/default  # Remove default site
+nginx -t  # Test configuration
+systemctl restart nginx
+```
+
+## Step 11: Set Up Continuous Deployment (Optional)
+
+For automatic deployments, you can set up a simple deployment script that pulls from your repository and rebuilds the application:
+
+```bash
+cd /var/www/bills-app
+nano deploy-all.sh
+```
+
+Add the following content:
+
+```bash
+#!/bin/bash
+
+# Pull latest changes
+git pull
+
+# Deploy backend
+cd /var/www/bills-app/backend
+./deploy.sh
+
+# Deploy frontend
+cd /var/www/bills-app/frontend
+./deploy.sh
+
+# Deploy admin frontend
+cd /var/www/bills-app/admin-frontend
+./deploy.sh
+
+# Restart Nginx
+systemctl restart nginx
+
+echo "Deployment completed successfully!"
+```
+
+Make the script executable:
+
+```bash
+chmod +x deploy-all.sh
+```
+
+## Step 12: Set Up MongoDB Backup (Recommended)
+
+Set up a cron job to backup your MongoDB database regularly:
+
+```bash
+apt install -y mongodb-clients
+mkdir -p /var/backups/mongodb
+
+# Create backup script
+nano /usr/local/bin/backup-mongodb.sh
+```
+
+Add the following content:
+
+```bash
+#!/bin/bash
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+BACKUP_DIR="/var/backups/mongodb"
+MONGODB_URI="your_mongodb_connection_string"
+DB_NAME="your_database_name"
+
+# Create backup
+mongodump --uri="$MONGODB_URI" --out="$BACKUP_DIR/$TIMESTAMP"
+
+# Keep only the last 7 backups
+ls -dt "$BACKUP_DIR"/* | tail -n +8 | xargs rm -rf
+```
+
+Make the script executable:
+
+```bash
+chmod +x /usr/local/bin/backup-mongodb.sh
+```
+
+Set up a daily cron job:
+
+```bash
+crontab -e
+```
+
+Add the following line:
+
+```
+0 0 * * * /usr/local/bin/backup-mongodb.sh
+```
+
+## Step 13: Set Up Monitoring (Recommended)
+
+Install and configure monitoring tools:
+
+```bash
+# Install monitoring tools
+pm2 install pm2-logrotate
+pm2 set pm2-logrotate:max_size 10M
+pm2 set pm2-logrotate:retain 7
+
+# Set up PM2 monitoring
+pm2 monitor
+```
+
+## Step 14: Security Hardening (Recommended)
+
+Enhance server security:
+
+```bash
+# Set up firewall
+ufw allow ssh
+ufw allow http
+ufw allow https
+ufw enable
+
+# Install fail2ban to prevent brute force attacks
+apt install -y fail2ban
+systemctl enable fail2ban
+systemctl start fail2ban
+```
+
+## Troubleshooting
+
+### Backend Issues
+
+- Check PM2 logs: `pm2 logs bills-backend`
+- Verify environment variables: `cat /var/www/bills-app/backend/.env`
+- Check MongoDB connection: `mongo your_mongodb_uri`
+
+### Frontend Issues
+
+- Check Nginx error logs: `tail -f /var/log/nginx/error.log`
+- Verify build files: `ls -la /var/www/bills-app/frontend/dist`
+- Check permissions: `chmod -R 755 /var/www/bills-app/frontend/dist`
+
+### SSL Issues
+
+- Renew certificates: `certbot renew`
+- Test Nginx configuration: `nginx -t`
+
+## Maintenance
+
+### Regular Updates
+
+```bash
+# Update system packages
+apt update && apt upgrade -y
+
+# Update Node.js packages
+cd /var/www/bills-app/backend
+npm update
+
+cd /var/www/bills-app/frontend
+npm update
+
+cd /var/www/bills-app/admin-frontend
+npm update
+```
+
+### Monitoring Disk Space
+
+```bash
+# Check disk usage
+df -h
+
+# Clean up unnecessary files if needed
+apt autoremove -y
+apt clean
+```
+
+## Scaling (Future Considerations)
+
+As your application grows, consider:
+
+1. **Upgrading your Droplet**: Increase RAM and CPU as needed
+2. **Load Balancing**: Set up multiple Droplets with a load balancer
+3. **Database Scaling**: Consider MongoDB Atlas scaling options
+4. **CDN Integration**: Use DigitalOcean Spaces with CDN for static assets
+5. **Containerization**: Consider Docker and Kubernetes for more complex deployments
+
+## Conclusion
+
+Your Nigerian Bill Payment application should now be successfully deployed to DigitalOcean. The setup includes:
+
+- Secure HTTPS connections
+- Separate frontend and admin dashboard
+- Backend API with PM2 process management
+- Regular database backups
+- Basic monitoring and security
+
+For additional support, refer to DigitalOcean's documentation or contact your development team.
