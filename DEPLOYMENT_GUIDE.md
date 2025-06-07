@@ -143,6 +143,27 @@ PAYSTACK_PUBLIC_KEY=your_paystack_public_key
 PAYSTACK_WEBHOOK_SECRET=your_paystack_webhook_secret
 ```
 
+### Generating a Secure JWT Secret
+
+For security, you should use a strong random string as your JWT secret. We've provided two scripts to help you generate one:
+
+**Using Bash (works on Linux/Mac/WSL):**
+```bash
+# Make the script executable
+chmod +x generate-jwt-secret.sh
+
+# Run the script
+./generate-jwt-secret.sh
+```
+
+**Using Node.js:**
+```bash
+# Run the Node.js script
+node generate-jwt-secret.js
+```
+
+Choose one of the generated secrets and add it to your `.env` file. For maximum security, generate this secret directly on your production server, not on your development machine.
+
 ## Step 7: Deploy the Backend
 
 ```bash
