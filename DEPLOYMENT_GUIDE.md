@@ -66,11 +66,47 @@ apt install -y certbot python3-certbot-nginx
 apt install -y git
 ```
 
-## Step 4: Set Up SSL Certificate
+## Step 4: Set Up DNS and SSL Certificate
+
+### DNS Configuration
+
+Before obtaining SSL certificates, ensure your DNS is properly configured:
+
+1. **Verify DNS Records**:
+   ```bash
+   # Make the DNS checker script executable
+   chmod +x check-dns.sh
+   
+   # Run the DNS checker
+   ./check-dns.sh
+   ```
+
+2. **Troubleshoot DNS Issues**:
+   If you encounter DNS issues, refer to the `DNS_SSL_TROUBLESHOOTING.md` guide.
+
+3. **Temporary Deployment Without SSL**:
+   If DNS propagation is still in progress, you can temporarily deploy without SSL:
+   ```bash
+   cp nginx-without-ssl.conf /etc/nginx/sites-available/bills-app
+   ln -s /etc/nginx/sites-available/bills-app /etc/nginx/sites-enabled/
+   rm /etc/nginx/sites-enabled/default  # Remove default site if it exists
+   nginx -t  # Test configuration
+   systemctl restart nginx
+   ```
+
+### SSL Certificate Setup
+
+Once DNS is properly configured:
 
 ```bash
 # Obtain SSL certificate
-certbot --nginx -d yourdomain.com -d www.yourdomain.com -d admin.yourdomain.com
+certbot --nginx -d 9japayments.online -d www.9japayments.online -d admin.9japayments.online
+```
+
+If you encounter issues with the DNS challenge, try the HTTP challenge:
+
+```bash
+certbot --nginx --preferred-challenges http -d 9japayments.online -d www.9japayments.online -d admin.9japayments.online
 ```
 
 Follow the prompts to complete the SSL setup.
@@ -309,6 +345,19 @@ systemctl start fail2ban
 
 ## Troubleshooting
 
+### DNS and SSL Issues
+
+For DNS and SSL certificate issues, we've provided dedicated resources:
+
+- **DNS Checker Script**: Run `./check-dns.sh` to diagnose DNS configuration issues
+- **Troubleshooting Guide**: Refer to `DNS_SSL_TROUBLESHOOTING.md` for detailed solutions
+- **Temporary Nginx Config**: Use `nginx-without-ssl.conf` if you need to deploy before DNS propagation is complete
+
+Common SSL commands:
+- Renew certificates: `certbot renew`
+- Test Nginx configuration: `nginx -t`
+- Force HTTP challenge: `certbot --nginx --preferred-challenges http -d yourdomain.com`
+
 ### Backend Issues
 
 - Check PM2 logs: `pm2 logs bills-backend`
@@ -320,11 +369,6 @@ systemctl start fail2ban
 - Check Nginx error logs: `tail -f /var/log/nginx/error.log`
 - Verify build files: `ls -la /var/www/bills-app/frontend/dist`
 - Check permissions: `chmod -R 755 /var/www/bills-app/frontend/dist`
-
-### SSL Issues
-
-- Renew certificates: `certbot renew`
-- Test Nginx configuration: `nginx -t`
 
 ## Maintenance
 
