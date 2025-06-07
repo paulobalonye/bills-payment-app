@@ -447,15 +447,42 @@ We've provided a solution:
    - Updates tailwind.config.js
    - Ensures index.css contains the proper Tailwind directives
 
-2. **Manual fix**:
+#### Tailwind CSS Nesting Plugin Issues
+
+If you encounter errors related to the Tailwind CSS nesting plugin like:
+```
+Loading PostCSS Plugin failed: Package subpath './nesting' is not defined by "exports" in /node_modules/tailwindcss/package.json
+```
+
+We've provided multiple solutions:
+
+1. **Use the fix-tailwind-nesting.sh script**:
+   ```bash
+   chmod +x fix-tailwind-nesting.sh
+   ./fix-tailwind-nesting.sh
+   ```
+   This script:
+   - Updates postcss.config.js to use postcss-nesting instead of tailwindcss/nesting
+   - Installs the correct versions of tailwindcss, postcss, and autoprefixer
+   - Installs postcss-nesting separately
+
+2. **Use the fix-postcss-simple.sh script** (simplest solution):
+   ```bash
+   chmod +x fix-postcss-simple.sh
+   ./fix-postcss-simple.sh
+   ```
+   This script:
+   - Applies a minimal PostCSS configuration that works with most setups
+   - Installs compatible versions of tailwindcss, postcss, and autoprefixer
+
+3. **Manual fix**:
    ```bash
    cd frontend  # or admin-frontend
    
-   # Update postcss.config.js
+   # Create a simple postcss.config.js
    cat > postcss.config.js << 'EOL'
-   export default {
+   module.exports = {
      plugins: {
-       'tailwindcss/nesting': {},
        tailwindcss: {},
        autoprefixer: {},
      },
@@ -463,7 +490,7 @@ We've provided a solution:
    EOL
    
    # Install correct dependencies
-   npm install -D tailwindcss@latest postcss@latest autoprefixer@latest
+   npm install -D tailwindcss@^3.3.0 postcss@^8.4.23 autoprefixer@^10.4.14
    
    # Try building again
    npm run build
