@@ -558,6 +558,78 @@ We've provided multiple solutions:
    npm run build
    ```
 
+#### Tailwind CSS Theme Colors Issues
+
+If you encounter errors related to missing Tailwind CSS classes like:
+```
+The `bg-primary-600` class does not exist. If `bg-primary-600` is a custom class, make sure it is defined within a `@layer` directive.
+```
+
+We've provided a solution:
+
+1. **Use the fix-tailwind-theme.sh script**:
+   ```bash
+   chmod +x fix-tailwind-theme.sh
+   ./fix-tailwind-theme.sh
+   ```
+   This script:
+   - Updates tailwind.config.js to include custom theme colors
+   - Adds color palettes for primary, secondary, success, danger, warning, and info
+   - Installs compatible versions of tailwindcss, postcss, and autoprefixer
+
+2. **Manual fix**:
+   ```bash
+   cd frontend  # or admin-frontend
+   
+   # Edit tailwind.config.js to include custom theme colors
+   cat > tailwind.config.js << 'EOL'
+   /** @type {import('tailwindcss').Config} */
+   export default {
+     content: [
+       "./index.html",
+       "./src/**/*.{js,ts,jsx,tsx}",
+     ],
+     theme: {
+       extend: {
+         colors: {
+           primary: {
+             50: '#f0f9ff',
+             100: '#e0f2fe',
+             200: '#bae6fd',
+             300: '#7dd3fc',
+             400: '#38bdf8',
+             500: '#0ea5e9',
+             600: '#0284c7',
+             700: '#0369a1',
+             800: '#075985',
+             900: '#0c4a6e',
+             950: '#082f49',
+           },
+           // Add other color palettes as needed
+         },
+       },
+     },
+     plugins: [],
+   }
+   EOL
+   
+   # Try building again
+   npm run build
+   ```
+
+3. **Alternative: Modify the CSS file**:
+   If you know which CSS file is using the custom classes (e.g., src/index.css), you can:
+   - Remove the custom classes
+   - Replace them with standard Tailwind classes
+   - Or define them within a `@layer` directive:
+   ```css
+   @layer components {
+     .bg-primary-600 {
+       @apply bg-blue-600;
+     }
+   }
+   ```
+
 ### Backend Issues
 
 - Check PM2 logs: `pm2 logs bills-backend`
