@@ -136,10 +136,10 @@ Update the environment variables with your production values:
 
 ```
 PORT=5000
-MONGODB_URI=mongodb+srv://your_mongodb_atlas_connection_string
-JWT_SECRET=your_secure_jwt_secret
-PAYSTACK_SECRET_KEY=your_paystack_secret_key
-PAYSTACK_PUBLIC_KEY=your_paystack_public_key
+MONGODB_URI=mongodb+srv://paulobalonye:9ZcodPi50qgnQO88@cluster0.1azpml0.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+JWT_SECRET=DUidsuAJ005RIrjR+uMDKrutzsGlcIpuzSbp1d1mj+F3zr4u4+QlnoYJP9DXYxe1PkhGqazpFjcy6flGMHI2bA==
+PAYSTACK_SECRET_KEY=sk_live_cb40ef316c1a5ffc3f177fd2f3a9dd16708fe187
+PAYSTACK_PUBLIC_KEY=pk_live_1288d51bf8d0820c51d2dc2ca84fab8ae4d12340
 PAYSTACK_WEBHOOK_SECRET=your_paystack_webhook_secret
 ```
 
@@ -378,6 +378,51 @@ Common SSL commands:
 - Renew certificates: `certbot renew`
 - Test Nginx configuration: `nginx -t`
 - Force HTTP challenge: `certbot --nginx --preferred-challenges http -d yourdomain.com`
+
+### Frontend Build Issues
+
+If you encounter Rollup build errors like:
+```
+Error: Cannot find module @rollup/rollup-linux-x64-gnu
+```
+
+We've provided several solutions:
+
+1. **Use the fix-rollup-build.sh script**:
+   ```bash
+   chmod +x fix-rollup-build.sh
+   ./fix-rollup-build.sh
+   ```
+   This script removes node_modules, reinstalls dependencies, and adds platform-specific Rollup binaries.
+
+2. **Use the enhanced deployment scripts**:
+   ```bash
+   # For frontend
+   cd frontend
+   chmod +x deploy-fixed.sh
+   ./deploy-fixed.sh
+   
+   # For admin frontend
+   cd admin-frontend
+   chmod +x deploy-fixed.sh
+   ./deploy-fixed.sh
+   ```
+   These scripts include built-in fixes for common build issues.
+
+3. **Manual fix**:
+   ```bash
+   cd frontend  # or admin-frontend
+   rm -rf node_modules package-lock.json
+   npm install
+   npm install --no-save @rollup/rollup-linux-x64-gnu @rollup/rollup-linux-x64-musl
+   npm run build
+   ```
+
+4. **Use legacy OpenSSL provider**:
+   ```bash
+   cd frontend  # or admin-frontend
+   NODE_OPTIONS=--openssl-legacy-provider npm run build
+   ```
 
 ### Backend Issues
 
