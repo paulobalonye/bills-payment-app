@@ -558,16 +558,21 @@ We've provided multiple solutions:
    npm run build
    ```
 
-#### Tailwind CSS Theme Colors Issues
+#### Tailwind CSS Custom Classes Issues
 
 If you encounter errors related to missing Tailwind CSS classes like:
 ```
 The `bg-primary-600` class does not exist. If `bg-primary-600` is a custom class, make sure it is defined within a `@layer` directive.
 ```
 
+Or:
+```
+The `shadow-card` class does not exist. If `shadow-card` is a custom class, make sure it is defined within a `@layer` directive.
+```
+
 We've provided a solution:
 
-1. **Use the fix-tailwind-theme.sh script**:
+1. **Use the fix-tailwind-theme.sh script** (recommended):
    ```bash
    chmod +x fix-tailwind-theme.sh
    ./fix-tailwind-theme.sh
@@ -575,13 +580,15 @@ We've provided a solution:
    This script:
    - Updates tailwind.config.js to include custom theme colors
    - Adds color palettes for primary, secondary, success, danger, warning, and info
+   - Adds custom shadow utilities (shadow-card, shadow-dropdown, etc.)
+   - Adds custom border radius and spacing utilities
    - Installs compatible versions of tailwindcss, postcss, and autoprefixer
 
 2. **Manual fix**:
    ```bash
    cd frontend  # or admin-frontend
    
-   # Edit tailwind.config.js to include custom theme colors
+   # Edit tailwind.config.js to include custom theme extensions
    cat > tailwind.config.js << 'EOL'
    /** @type {import('tailwindcss').Config} */
    export default {
@@ -607,6 +614,12 @@ We've provided a solution:
            },
            // Add other color palettes as needed
          },
+         boxShadow: {
+           'card': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+           'card-hover': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+           'dropdown': '0 2px 5px 0 rgba(0, 0, 0, 0.1)',
+         },
+         // Add other custom utilities as needed
        },
      },
      plugins: [],
@@ -626,6 +639,9 @@ We've provided a solution:
    @layer components {
      .bg-primary-600 {
        @apply bg-blue-600;
+     }
+     .shadow-card {
+       @apply shadow-md;
      }
    }
    ```
