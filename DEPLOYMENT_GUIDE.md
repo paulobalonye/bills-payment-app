@@ -466,7 +466,7 @@ We've provided multiple solutions:
    - Installs the correct versions of tailwindcss, postcss, and autoprefixer
    - Installs postcss-nesting separately
 
-2. **Use the fix-postcss-simple.sh script** (simplest solution):
+2. **Use the fix-postcss-simple.sh script**:
    ```bash
    chmod +x fix-postcss-simple.sh
    ./fix-postcss-simple.sh
@@ -475,18 +475,80 @@ We've provided multiple solutions:
    - Applies a minimal PostCSS configuration that works with most setups
    - Installs compatible versions of tailwindcss, postcss, and autoprefixer
 
+#### ES Module Issues with PostCSS
+
+If you encounter errors related to ES modules like:
+```
+[ReferenceError] module is not defined in ES module scope
+This file is being treated as an ES module because it has a '.js' file extension and '/package.json' contains "type": "module".
+```
+
+We've provided multiple solutions:
+
+1. **Use the fix-postcss-esm.sh script**:
+   ```bash
+   chmod +x fix-postcss-esm.sh
+   ./fix-postcss-esm.sh
+   ```
+   This script:
+   - Detects if your project is using ES modules
+   - Creates the appropriate PostCSS configuration format
+   - Installs compatible versions of tailwindcss, postcss, and autoprefixer
+
+2. **Use the fix-postcss-cjs.sh script** (recommended solution):
+   ```bash
+   chmod +x fix-postcss-cjs.sh
+   ./fix-postcss-cjs.sh
+   ```
+   This script:
+   - Removes postcss.config.js
+   - Creates postcss.config.cjs (CommonJS format)
+   - Installs compatible versions of tailwindcss, postcss, and autoprefixer
+
 3. **Manual fix**:
    ```bash
    cd frontend  # or admin-frontend
    
-   # Create a simple postcss.config.js
-   cat > postcss.config.js << 'EOL'
+   # Rename postcss.config.js to postcss.config.cjs
+   mv postcss.config.js postcss.config.js.bak
+   
+   # Create a CommonJS format config file
+   cat > postcss.config.cjs << 'EOL'
    module.exports = {
      plugins: {
        tailwindcss: {},
        autoprefixer: {},
-     },
+     }
    }
+   EOL
+   
+   # Install correct dependencies
+   npm install -D tailwindcss@^3.3.0 postcss@^8.4.23 autoprefixer@^10.4.14
+   
+   # Try building again
+   npm run build
+   ```
+
+4. **Alternative: Configure PostCSS in vite.config.js**:
+   ```bash
+   cd frontend  # or admin-frontend
+   
+   # Edit vite.config.js to include PostCSS config
+   cat > vite.config.js << 'EOL'
+   import { defineConfig } from 'vite';
+   import tailwindcss from 'tailwindcss';
+   import autoprefixer from 'autoprefixer';
+   
+   export default defineConfig({
+     css: {
+       postcss: {
+         plugins: [
+           tailwindcss,
+           autoprefixer,
+         ],
+       },
+     },
+   });
    EOL
    
    # Install correct dependencies
