@@ -381,6 +381,8 @@ Common SSL commands:
 
 ### Frontend Build Issues
 
+#### Rollup Build Errors
+
 If you encounter Rollup build errors like:
 ```
 Error: Cannot find module @rollup/rollup-linux-x64-gnu
@@ -422,6 +424,49 @@ We've provided several solutions:
    ```bash
    cd frontend  # or admin-frontend
    NODE_OPTIONS=--openssl-legacy-provider npm run build
+   ```
+
+#### Tailwind CSS PostCSS Plugin Issues
+
+If you encounter Tailwind CSS PostCSS plugin errors like:
+```
+[postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin.
+The PostCSS plugin has moved to a separate package...
+```
+
+We've provided a solution:
+
+1. **Use the fix-tailwind-postcss.sh script**:
+   ```bash
+   chmod +x fix-tailwind-postcss.sh
+   ./fix-tailwind-postcss.sh
+   ```
+   This script:
+   - Updates postcss.config.js with the correct configuration
+   - Installs the latest versions of tailwindcss, postcss, and autoprefixer
+   - Updates tailwind.config.js
+   - Ensures index.css contains the proper Tailwind directives
+
+2. **Manual fix**:
+   ```bash
+   cd frontend  # or admin-frontend
+   
+   # Update postcss.config.js
+   cat > postcss.config.js << 'EOL'
+   export default {
+     plugins: {
+       'tailwindcss/nesting': {},
+       tailwindcss: {},
+       autoprefixer: {},
+     },
+   }
+   EOL
+   
+   # Install correct dependencies
+   npm install -D tailwindcss@latest postcss@latest autoprefixer@latest
+   
+   # Try building again
+   npm run build
    ```
 
 ### Backend Issues
